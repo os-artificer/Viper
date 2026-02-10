@@ -1,0 +1,13 @@
+name: agent
+version: v1.0
+
+controller:
+  - endpoint:
+      ip: 127.0.0.1
+      port: 26688
+
+log:
+  path: ./logs/agent.log
+  level: debug
+  file-count: 10
+  file-sizeMB: 100
