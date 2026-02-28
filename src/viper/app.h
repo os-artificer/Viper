@@ -14,13 +14,14 @@
  * limitations under the License.
  **/
 
-#ifndef _VIPER_AGENT_APP_H_
-#define _VIPER_AGENT_APP_H_
+#ifndef _VIPER_APP_H_
+#define _VIPER_APP_H_
 
+// local header file
+#include "internal/error.h"
 #include "viper/configuration.h"
 
-#include "internal/error.h"
-
+// third party header file
 #include "core/app/core.h"
 
 class App final
@@ -42,13 +43,6 @@ private:
     viper::internal::ErrorCode InitController();
     viper::internal::ErrorCode LoadConfig(viper::app::ContextPtr ctx);
     std::error_code            Execute(viper::app::ContextPtr ctx);
-
-private:
-    viper::internal::ErrorCode VersionCommand(viper::app::ContextPtr ctx);
-    std::error_code            ShowCpu(viper::app::ContextPtr ctx);
-    std::error_code            ShowMem(viper::app::ContextPtr ctx);
-    std::error_code            ShowDisk(viper::app::ContextPtr ctx);
-    std::error_code            ShowNet(viper::app::ContextPtr ctx);
 
 private:
     ConfigurationPtr    _localConfig;

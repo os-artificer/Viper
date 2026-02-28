@@ -14,17 +14,16 @@
  * limitations under the License.
  **/
 
+#ifndef _VIPER_CMDS_H_
+#define _VIPER_CMDS_H_
+
 // local header file
-#include "viper/app.h"
+#include "internal/error.h"
+#include "viper/configuration.h"
 
 // third party header file
+#include "core/app/core.h"
 
-// c++ standard header file
+viper::internal::ErrorCode RegisterCommands(viper::app::CorePtr core, ConfigurationPtr config);
 
-// c standard header file
-
-int main(int argc, char *argv[])
-{
-    auto ec = App().Run(argc, argv);
-    return (int)ec;
-}
+#endif
