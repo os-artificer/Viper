@@ -17,10 +17,15 @@
 #ifndef _VIPER_AGENT_CONFIG_H_
 #define _VIPER_AGENT_CONFIG_H_
 
+// local header file
 #include "core/app/context.h"
 
-#include <cstdint>
+
+// c++ standard header file
 #include <string>
+
+// c standard header file
+#include <cstdint>
 
 // clang-format off
 
