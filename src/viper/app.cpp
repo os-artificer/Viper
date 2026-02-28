@@ -18,12 +18,18 @@
 
 #include "internal/error.h"
 
+#include "core/app/core.h"
 #include "core/assist/time.h"
 #include "core/core.h"
+#include "core/option/command.h"
+#include "core/option/value.h"
 #include "core/error/error.h"
 #include "core/log/log.h"
 
 #include <cstdint>
+#include <iostream>
+#include <string>
+#include <system_error>
 
 App::App()
 {
@@ -47,6 +53,12 @@ viper::internal::ErrorCode App::Run(int argc, char *argv[])
     _needStop = false;
 
     ec = InitFlags();
+    if (!viper::error::IsSuccess(ec))
+    {
+        return viper::internal::ErrorCode::ERROR;
+    }
+
+    ec = InitCommands();
     if (!viper::error::IsSuccess(ec))
     {
         return viper::internal::ErrorCode::ERROR;
@@ -86,15 +98,7 @@ void App::DumpConfiguration()
 
 viper::internal::ErrorCode App::InitFlags()
 {
-    viper::app::FlagString flagConfig;
-
-    flagConfig._fullName    = "config";
-    flagConfig._shortName   = 'c';
-    flagConfig._description = "the config file";
-    flagConfig._value       = "./etc/viper.yaml";
-
-    _core->AddCommand(flagConfig);
-
+    _core->AddFlag("config", 'c', "the config file", viper::option::Value("./etc/viper.yaml"));
     return viper::internal::ErrorCode::SUCCESS;
 }
 
@@ -116,6 +120,93 @@ viper::internal::ErrorCode App::InitLogs()
     return viper::internal::ErrorCode::SUCCESS;
 }
 
+viper::internal::ErrorCode App::InitCommands()
+{
+    _core->AddCommand("version", "show the version", std::bind(&App::VersionCommand, this, std::placeholders::_1));
+
+    auto showCmd = std::make_shared<viper::option::Command>();
+    showCmd->_use   = "show";
+    showCmd->_short = "show system or resource info";
+
+    auto cpuCmd = std::make_shared<viper::option::Command>();
+    cpuCmd->_use   = "cpu";
+    cpuCmd->_short = "show CPU info";
+    cpuCmd->_run   = [this](const viper::option::Args& args) {
+        _core->GetContext()->SetArgs(args);
+        auto ec = ShowCpu(_core->GetContext());
+        return ec ? 1 : 0;
+    };
+    showCmd->AddCommand(cpuCmd);
+
+    auto memCmd = std::make_shared<viper::option::Command>();
+    memCmd->_use   = "mem";
+    memCmd->_short = "show memory info";
+    memCmd->_run   = [this](const viper::option::Args& args) {
+        _core->GetContext()->SetArgs(args);
+        auto ec = ShowMem(_core->GetContext());
+        return ec ? 1 : 0;
+    };
+    showCmd->AddCommand(memCmd);
+
+    auto diskCmd = std::make_shared<viper::option::Command>();
+    diskCmd->_use   = "disk";
+    diskCmd->_short = "show disk info";
+    diskCmd->_run   = [this](const viper::option::Args& args) {
+        _core->GetContext()->SetArgs(args);
+        auto ec = ShowDisk(_core->GetContext());
+        return ec ? 1 : 0;
+    };
+    showCmd->AddCommand(diskCmd);
+
+    auto netCmd = std::make_shared<viper::option::Command>();
+    netCmd->_use   = "net";
+    netCmd->_short = "show network info";
+    netCmd->_run   = [this](const viper::option::Args& args) {
+        _core->GetContext()->SetArgs(args);
+        auto ec = ShowNet(_core->GetContext());
+        return ec ? 1 : 0;
+    };
+    showCmd->AddCommand(netCmd);
+
+    _core->AddCommand(showCmd);
+
+    return viper::internal::ErrorCode::SUCCESS;
+}
+
+viper::internal::ErrorCode App::VersionCommand(viper::app::ContextPtr ctx)
+{
+    std::cout << "viper version: " << _localConfig->_version << std::endl;
+    return viper::internal::ErrorCode::SUCCESS;
+}
+
+std::error_code App::ShowCpu(viper::app::ContextPtr ctx)
+{
+    (void)ctx;
+    std::cout << "cpu info (placeholder)" << std::endl;
+    return std::error_code{};
+}
+
+std::error_code App::ShowMem(viper::app::ContextPtr ctx)
+{
+    (void)ctx;
+    std::cout << "memory info (placeholder)" << std::endl;
+    return std::error_code{};
+}
+
+std::error_code App::ShowDisk(viper::app::ContextPtr ctx)
+{
+    (void)ctx;
+    std::cout << "disk info (placeholder)" << std::endl;
+    return std::error_code{};
+}
+
+std::error_code App::ShowNet(viper::app::ContextPtr ctx)
+{
+    (void)ctx;
+    std::cout << "network info (placeholder)" << std::endl;
+    return std::error_code{};
+}
+
 viper::internal::ErrorCode App::LoadConfig(viper::app::ContextPtr ctx)
 {
     _localConfig->_ctx = ctx;
@@ -125,13 +216,13 @@ viper::internal::ErrorCode App::LoadConfig(viper::app::ContextPtr ctx)
         return viper::internal::ErrorCode::ERROR;
     }
 
-    auto cfg = ctx->GetFlagValue<viper::app::FlagString>("config");
-    std::cout << "config:" << cfg._value << std::endl;
+    std::string configPath = ctx->GetFlagValue<std::string>("config");
+    std::cout << "config:" << configPath << std::endl;
 
-    auto ec = ctx->LoadConfig(cfg._value);
+    auto ec = ctx->LoadConfig(configPath);
     if (!viper::internal::IsSuccess(ec))
     {
-        LOG_STD("can not load config file(%s)", cfg._value.c_str());
+        LOG_STD("can not load config file(%s)", configPath.c_str());
         return viper::internal::ErrorCode::ERROR;
     }
 

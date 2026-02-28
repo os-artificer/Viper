@@ -19,12 +19,14 @@
 
 #include "core/app/context.h"
 #include "core/app/env.h"
-#include "third-party/cmdline/cmdline.h"
+#include "core/option/command.h"
+#include "core/option/flag.h"
+#include "core/option/value.h"
 
 #include <functional>
 #include <memory>
 #include <system_error>
-#include <vector>
+#include <string>
 
 namespace viper {
 namespace app {
@@ -39,39 +41,49 @@ public:
 
 public:
     /**
-     * @brief AddCommand add a flag
-     *
+     * @brief AddFlag register a command-line flag with default value.
      */
-    void AddCommand(const FlagInt& flag);
-    void AddCommand(const FlagString& flag);
-    void AddCommand(const FlagBool& flag);
-    void AddCommand(const FlagNoValue& flag);
+    void AddFlag(const std::string& name, char shortName, const std::string& description, const option::Value& defaultValue);
 
     /**
-     * @brief Run block to run the service
+     * @brief AddCommand register a subcommand (e.g. "run", "version").
+     * @param name Subcommand name as used on CLI (e.g. "run")
+     * @param shortDesc Short description for usage/help listing
+     * @param handler Called when this subcommand is invoked; receives Context with parsed args.
+     */
+    void AddCommand(const std::string& name, const std::string& shortDesc, CommandHandler handler);
+
+    /**
+     * @brief AddCommand register a pre-built subcommand (may have nested subcommands/flags).
+     * @param cmd Subcommand tree; caller must set _use, _short, and optionally _run (use GetContext() to SetArgs and run logic).
+     */
+    void AddCommand(std::shared_ptr<option::Command> cmd);
+
+    /**
+     * @brief GetContext return the shared context (e.g. for use in custom command _run with SetArgs).
+     */
+    ContextPtr GetContext() const;
+
+    /**
+     * @brief Run parse argv, fill context with parsed args, and call executor.
      *
      * @param argc the argv count
      * @param argv the all argv
      * @param executor the executor function, if it exited, the process will be exited
-     * @return std::error_code Success for sucess, the others for error
+     * @return std::error_code Success for success, the others for error
      */
     std::error_code Run(int argc, char* argv[], CommandHandler executor);
 
     /**
      * @brief Close close the application
-     *
      */
     void Close();
 
 private:
-    ContextPtr               _ctx;
-    EnvPtr                   _env;
-    ConfigFilePtr            _file;
-    cmdline::parser          _parser;
-    std::vector<FlagInt>     _iFlags;
-    std::vector<FlagString>  _sFlags;
-    std::vector<FlagBool>    _bFlags;
-    std::vector<FlagNoValue> _nvFlags;
+    ContextPtr                      _ctx;
+    EnvPtr                          _env;
+    ConfigFilePtr                   _file;
+    std::shared_ptr<option::Command> _root;
 };
 
 using CorePtr = std::shared_ptr<Core>;
